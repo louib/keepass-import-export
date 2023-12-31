@@ -45,6 +45,11 @@
 
               cargoLock = {
                 lockFile = ./Cargo.lock;
+                outputHashes = {
+                  # This hash need to be updated everytime you bump the version of the keepass-rs
+                  # library.
+                  "keepass-0.0.0-placeholder-version" = "sha256-QH9j2pLhx6p/HiGd6b5YoUePFuZGy5nbX7H+UNpVUeU=";
+                };
               };
 
               meta = with pkgs.lib; {
