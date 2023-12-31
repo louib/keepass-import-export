@@ -48,8 +48,8 @@ fn export_entry(entry: &keepass::db::Entry) -> Option<Entry> {
         let mut aegis_entry = Entry::default();
         aegis_entry.method = Method::TOTP;
         aegis_entry.label = entry_title.to_string();
-        aegis_entry.issuer = Some(totp.issuer);
-        aegis_entry.info.secret = keepass::db::TOTP::dump_secret(&totp.secret);
+        aegis_entry.issuer = Some(totp.issuer.clone());
+        aegis_entry.info.secret = totp.get_secret();
         aegis_entry.info.period = Some(totp.period.try_into().unwrap());
         aegis_entry.info.digits = totp.digits;
         aegis_entry.info.counter = None;
