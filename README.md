@@ -5,6 +5,9 @@
 
 CLI tools to export to and import from KDBX (keepass) databases
 
+> Only the KDBX and aegis formats are current supported.
+> Please feel free to request or add more formats!
+
 `keepass-import-export` is based on the [`keepass-rs` library](https://github.com/sseemayer/keepass-rs).
 
 ## Installing
