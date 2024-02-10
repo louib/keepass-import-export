@@ -21,6 +21,10 @@ struct Args {
     #[arg(short = 'f', long)]
     format: String,
 
+    /// A comma-separated list of tags to exclude from the export
+    #[arg(long)]
+    exclude_tags: String,
+
     /// Provide an output file
     out_file: String,
 }
@@ -45,11 +49,12 @@ fn main() -> Result<std::process::ExitCode> {
     key = key.with_password(&password);
 
     let mut db = Database::open(&mut source, key)?;
+    let exclude_tags = args.exclude_tags.split(',').collect::<Vec<&str>>();
 
     let password = rpassword::prompt_password("Entry password for the exported database (or blank for none): ")
         .expect("Could not read password from TTY");
 
-    let out_db = keepass_import_export::aegis::export_database(&db, &password);
+    let out_db = keepass_import_export::aegis::export_database(&db, &password, exclude_tags);
 
     let mut out_file = File::options().write(true).create(true).open(args.out_file)?;
     out_file.write_all(out_db.as_bytes())?;

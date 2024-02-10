@@ -4,10 +4,10 @@ use aegis_vault::{
 };
 use keepass::{db::NodeRef, Database};
 
-pub fn export_database(database: &Database, password: &str) -> String {
+pub fn export_database(database: &Database, password: &str, exclude_tags: Vec<&str>) -> String {
     let mut aegis_root = Aegis::default();
 
-    for entry in export_group(&database.root) {
+    for entry in export_group(&database.root, exclude_tags) {
         aegis_root.add_entry(entry);
     }
 
@@ -18,17 +18,17 @@ pub fn export_database(database: &Database, password: &str) -> String {
     raw_encrypted_vault
 }
 
-fn export_group(group: &keepass::db::Group) -> Vec<Entry> {
+fn export_group(group: &keepass::db::Group, exclude_tags: Vec<&str>) -> Vec<Entry> {
     let mut entries: Vec<Entry> = vec![];
     for child in &group.children {
         match child {
             keepass::db::Node::Group(g) => {
-                for entry in export_group(g) {
+                for entry in export_group(g, exclude_tags.clone()) {
                     entries.push(entry);
                 }
             }
             keepass::db::Node::Entry(e) => {
-                if let Some(entry) = export_entry(e) {
+                if let Some(entry) = export_entry(e, exclude_tags.clone()) {
                     entries.push(entry);
                 }
             }
@@ -37,12 +37,19 @@ fn export_group(group: &keepass::db::Group) -> Vec<Entry> {
     entries
 }
 
-fn export_entry(entry: &keepass::db::Entry) -> Option<Entry> {
+fn export_entry(entry: &keepass::db::Entry, exclude_tags: Vec<&str>) -> Option<Entry> {
+    let entry_title = match entry.get_title() {
+        Some(t) => t.to_string(),
+        None => entry.get_uuid().to_string(),
+    };
+
+    for tag in &entry.tags {
+        if exclude_tags.contains(&tag.as_str()) {
+            println!("Entry {} is excluded since it has tag {}.", entry_title, tag);
+            return None;
+        }
+    }
     if let Ok(totp) = entry.get_otp() {
-        let entry_title = match entry.get_title() {
-            Some(t) => t.to_string(),
-            None => entry.get_uuid().to_string(),
-        };
         println!("Exporting TOTP for entry {}", entry_title);
 
         let mut aegis_entry = Entry::default();
@@ -54,6 +61,8 @@ fn export_entry(entry: &keepass::db::Entry) -> Option<Entry> {
         aegis_entry.info.digits = totp.digits;
         aegis_entry.info.counter = None;
         return Some(aegis_entry);
+    } else {
+        println!("Entry {} does not have OTP configured. Skipping.", &entry_title);
     }
     None
 }
